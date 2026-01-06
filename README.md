@@ -7,9 +7,8 @@ solving real-world problems through code.
 
 ## 📫 Connect with Me
 - **Email:** ishivamgaur@gmail.com
-- **Website:** ishivamgaur. com
 - **LinkedIn:** [ishivamgaur](https://linkedin.com/in/ishivamgaur)
-- **Instagram:** [@ishivamgaur](https://instagram.com/ishivamgaur)
 - **X:** [@ishivamgaur](https://x.com/ishivamgaur)
+- **Instagram:** [@ishivamgaur](https://instagram.com/ishivamgaur)
 
 Let's build something meaningful together! 🚀
