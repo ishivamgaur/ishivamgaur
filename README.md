@@ -2,7 +2,7 @@
 
 I'm **Shivam Gaur**.
 
-A Full Stack Web Developer (MERN) with 1+ year of professional experience.
+A Full Stack Web Developer (MERN) with 2+ year of professional experience.
 
 I build software and websites that matter to people.  I've created multiple applications and love
 solving real-world problems through code.
