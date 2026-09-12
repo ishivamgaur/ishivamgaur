@@ -17,11 +17,11 @@ export default {
   asciiWidth: 38,
   asciiHeight: 25,
 
-  // ─── Experience Start Date (1.6+ Years Experience) ───────────
-  uptimeStartDate: '2025-01-01',
+  // ─── GitHub Join Date (Nov 30, 2023) ─────────────────────────
+  uptimeStartDate: '2023-11-30',
 
   // ─── Professional Info ───────────────────────────────────────
-  role: 'Full-Stack MERN Developer',
+  role: 'Full Stack Developer',
   kernel: 'React, Next.js, Node.js, Express',
   databases: 'MongoDB, PostgreSQL, Redis',
   devops: 'AWS EC2, Docker, Nginx, Linux',

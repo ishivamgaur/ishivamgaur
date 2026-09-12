@@ -55,17 +55,20 @@ function calculateUptime(startDateStr) {
 // ─── GENERATE EDGE-TO-EDGE PIXEL GRID ─────────────────────────
 async function generatePixelGrid(imagePath) {
   const trimmed = await sharp(imagePath).trim().toBuffer();
+  const meta = await sharp(trimmed).metadata();
 
-  const gridW = 385;
+  // Enlarge avatar to 360px with exact 25px left margin
+  const gridW = 360;
   const gridH = 530;
 
-  const cols = 35;
+  const cols = 33;
   const rows = 48;
   const cellW = gridW / cols;
   const cellH = gridH / rows;
 
-  const avatarCols = 32;
-  const avatarRows = 43;
+  // Perfect natural aspect ratio (0.927) taking full 360px width
+  const avatarCols = 33;
+  const avatarRows = Math.round(avatarCols / (meta.width / meta.height)); // 36 rows
 
   const { data } = await sharp(trimmed)
     .resize(avatarCols, avatarRows, { fit: 'fill' })
@@ -73,8 +76,7 @@ async function generatePixelGrid(imagePath) {
     .raw()
     .toBuffer({ resolveWithObject: true });
 
-  const avatarStartCol = 1;
-  const avatarStartRow = rows - avatarRows;
+  const avatarStartRow = rows - avatarRows; // Sits firmly on the bottom edge
 
   let pixelRects = '';
   for (let r = 0; r < avatarRows; r++) {
@@ -87,10 +89,9 @@ async function generatePixelGrid(imagePath) {
 
       if (alpha < 35) continue;
 
-      const gridCol = avatarStartCol + c;
-      const gridRow = avatarStartRow + r;
-      const x = (gridCol * cellW + 0.5).toFixed(1);
-      const y = (gridRow * cellH + 0.5).toFixed(1);
+      // Exactly 25px left margin matching the 25px right margin
+      const x = (25 + c * cellW + 0.5).toFixed(1);
+      const y = (avatarStartRow * cellH + r * cellH + 0.5).toFixed(1);
       const w = (cellW - 1).toFixed(1);
       const h = (cellH - 1).toFixed(1);
       const hex = '#' + [red, green, blue].map(v => v.toString(16).padStart(2, '0')).join('');
@@ -115,6 +116,7 @@ async function fetchStats(username) {
   let stars = 38;
   let contributed = 12;
   let commits = 1450;
+  let createdAt = '2023-11-30T19:20:31Z';
 
   try {
     const userRes = await fetch(`https://api.github.com/users/${username}`, { headers });
@@ -122,6 +124,7 @@ async function fetchStats(username) {
       const u = await userRes.json();
       repos = u.public_repos ?? repos;
       followers = u.followers ?? followers;
+      createdAt = u.created_at ?? createdAt;
     }
 
     const reposRes = await fetch(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`, { headers });
@@ -171,31 +174,66 @@ async function fetchStats(username) {
   const deletions = Math.round(commits * 22 + repos * 80);
   const netLoc = additions - deletions;
 
-  return { repos, stars, followers, contributed, commits, additions, deletions, netLoc };
+  return { repos, stars, followers, contributed, commits, additions, deletions, netLoc, createdAt };
 }
 
 // ─── FORMAT RIGHT COLUMN WITH DOT LEADERS ─────────────────────
 function buildRightLines(stats, uptime) {
-  const COL_WIDTH = 50;
+  // Target width: exactly 58 characters so right margin matches left margin (25px each)
+  const TARGET_LEN = 58;
 
   function makeDotLine(key, value) {
-    const prefix = `. ${key}: `;
-    const dotsCount = Math.max(2, COL_WIDTH - prefix.length - value.length);
+    const keyWithColon = key + ':';
+    // Rendered: '. ' (2) + keyWithColon + dots + value
+    const baseLen = 2 + keyWithColon.length + value.length;
+    const dotsCount = Math.max(2, TARGET_LEN - baseLen);
     const dots = '.'.repeat(dotsCount);
     return {
       type: 'kv',
-      key: escapeXml(key + ':'),
-      dots: ` ${dots} `,
+      key: escapeXml(keyWithColon),
+      dots: dots,
       value: escapeXml(value),
     };
   }
+
+  const headerUser = `${config.name}@${config.host} `;
+  const headerDashes = '-'.repeat(Math.max(2, TARGET_LEN - headerUser.length));
+
+  const contactPrefix = '- Contact ';
+  const contactDashes = '-'.repeat(Math.max(2, TARGET_LEN - contactPrefix.length));
+
+  const statsPrefix = '- GitHub Stats ';
+  const statsDashes = '-'.repeat(Math.max(2, TARGET_LEN - statsPrefix.length));
+
+  // Stats line 1 (Repos & Stars) exactly 58 chars
+  const reposStr = stats.repos.toLocaleString();
+  const contributedStr = stats.contributed.toLocaleString();
+  const starsStr = stats.stars.toLocaleString();
+  // Boilerplate: '. Repos: ' (9) + '{Contributed: ' (14) + '}' (1) + ' | Stars: ' (11) = 35 chars
+  const reposBaseLen = 35 + reposStr.length + contributedStr.length + starsStr.length;
+  const starsDots = '.'.repeat(Math.max(2, TARGET_LEN - reposBaseLen));
+
+  // Stats line 2 (Commits & Followers) exactly 58 chars
+  const commitsStr = stats.commits.toLocaleString();
+  const followersStr = stats.followers.toLocaleString();
+  // Boilerplate: '. Commits: ' (11) + ' | Followers: ' (14) = 25 chars
+  const commitsBaseLen = 25 + commitsStr.length + followersStr.length;
+  const followersDots = '.'.repeat(Math.max(2, TARGET_LEN - commitsBaseLen));
+
+  // Stats line 3 (Lines of Code) exactly 58 chars
+  const locStr = stats.netLoc.toLocaleString();
+  const addedStr = stats.additions.toLocaleString();
+  const delStr = stats.deletions.toLocaleString();
+  // Boilerplate: '. Lines of Code: ' (17) + ' ( ' (3) + '++, ' (4) + '-- )' (4) = 28 chars
+  const locBaseLen = 28 + locStr.length + addedStr.length + delStr.length;
+  const locDots = '.'.repeat(Math.max(2, TARGET_LEN - locBaseLen));
 
   return [
     // 0: Header
     {
       type: 'header',
-      user: escapeXml(`${config.name}@${config.host}`),
-      dashes: ' ' + '-'.repeat(39),
+      user: escapeXml(headerUser),
+      dashes: headerDashes,
     },
     // 1: Host / Role
     makeDotLine('Host', config.role),
@@ -229,7 +267,7 @@ function buildRightLines(stats, uptime) {
     {
       type: 'section',
       title: 'Contact',
-      dashes: '-'.repeat(44),
+      dashes: contactDashes,
     },
     // 16: Email
     makeDotLine('Email', config.email),
@@ -245,27 +283,30 @@ function buildRightLines(stats, uptime) {
     {
       type: 'section',
       title: 'GitHub Stats',
-      dashes: '-'.repeat(40),
+      dashes: statsDashes,
     },
-    // 22: Repos & Stars
+    // 22: Repos & Stars (58 chars total)
     {
       type: 'stats_repos_stars',
-      repos: stats.repos.toLocaleString(),
-      contributed: stats.contributed.toLocaleString(),
-      stars: stats.stars.toLocaleString(),
+      repos: reposStr,
+      contributed: contributedStr,
+      starsDots: starsDots,
+      stars: starsStr,
     },
-    // 23: Commits & Followers
+    // 23: Commits & Followers (58 chars total)
     {
       type: 'stats_commits_followers',
-      commits: stats.commits.toLocaleString(),
-      followers: stats.followers.toLocaleString(),
+      commits: commitsStr,
+      followersDots: followersDots,
+      followers: followersStr,
     },
-    // 24: Lines of Code
+    // 24: Lines of Code (58 chars total)
     {
       type: 'stats_loc',
-      loc: stats.netLoc.toLocaleString(),
-      added: stats.additions.toLocaleString(),
-      deleted: stats.deletions.toLocaleString(),
+      dots: locDots,
+      loc: locStr,
+      added: addedStr,
+      deleted: delStr,
     },
   ];
 }
@@ -300,16 +341,8 @@ function renderSvg(theme, gridData, rightLines) {
 
   const { gridW, gridH, cols, rows, cellW, cellH, pixelRects } = gridData;
 
-  // Generate grid lines
+  // Grid lines disabled (opacity 0) per user preference
   let gridLines = '';
-  for (let r = 0; r <= rows; r++) {
-    const y = (r * cellH).toFixed(1);
-    gridLines += `    <line x1="0" y1="${y}" x2="${gridW}" y2="${y}" stroke="${colors.gridLine}" stroke-width="0.7"/>\n`;
-  }
-  for (let c = 0; c <= cols; c++) {
-    const x = (c * cellW).toFixed(1);
-    gridLines += `    <line x1="${x}" y1="0" x2="${x}" y2="${gridH}" stroke="${colors.gridLine}" stroke-width="0.7"/>\n`;
-  }
 
   // Generate right column lines
   let rowsSvg = '';
@@ -327,31 +360,26 @@ function renderSvg(theme, gridData, rightLines) {
     } else if (r.type === 'kv') {
       rightSvg = `<tspan class="cc">. </tspan><tspan class="key">${r.key}</tspan><tspan class="cc">${r.dots}</tspan><tspan class="value">${r.value}</tspan>`;
     } else if (r.type === 'stats_repos_stars') {
-      rightSvg = `<tspan class="cc">. </tspan><tspan class="key">Repos:</tspan><tspan class="cc"> ... </tspan><tspan class="value">${r.repos}</tspan><tspan class="key"> {Contributed: </tspan><tspan class="value">${r.contributed}</tspan><tspan class="key">}</tspan><tspan class="cc"> | </tspan><tspan class="key">Stars:</tspan><tspan class="cc"> ......... </tspan><tspan class="value">${r.stars}</tspan>`;
+      rightSvg = `<tspan class="cc">. </tspan><tspan class="key">Repos: </tspan><tspan class="value">${r.repos}</tspan><tspan class="key"> {Contributed: </tspan><tspan class="value">${r.contributed}</tspan><tspan class="key">}</tspan><tspan class="cc"> | </tspan><tspan class="key">Stars: </tspan><tspan class="cc">${r.starsDots}</tspan><tspan class="value">${r.stars}</tspan>`;
     } else if (r.type === 'stats_commits_followers') {
-      rightSvg = `<tspan class="cc">. </tspan><tspan class="key">Commits:</tspan><tspan class="cc"> .................. </tspan><tspan class="value">${r.commits}</tspan><tspan class="cc"> | </tspan><tspan class="key">Followers:</tspan><tspan class="cc"> ..... </tspan><tspan class="value">${r.followers}</tspan>`;
+      rightSvg = `<tspan class="cc">. </tspan><tspan class="key">Commits: </tspan><tspan class="value">${r.commits}</tspan><tspan class="cc"> | </tspan><tspan class="key">Followers: </tspan><tspan class="cc">${r.followersDots}</tspan><tspan class="value">${r.followers}</tspan>`;
     } else if (r.type === 'stats_loc') {
-      rightSvg = `<tspan class="cc">. </tspan><tspan class="key">Lines of Code on GitHub: </tspan><tspan class="value">${r.loc}</tspan><tspan class="cc"> ( </tspan><tspan class="addColor">${r.added}++</tspan><tspan class="cc">, </tspan><tspan class="delColor">${r.deleted}--</tspan><tspan class="cc"> )</tspan>`;
+      rightSvg = `<tspan class="cc">. </tspan><tspan class="key">Lines of Code: </tspan><tspan class="cc">${r.dots}</tspan><tspan class="value">${r.loc}</tspan><tspan class="cc"> ( </tspan><tspan class="addColor">${r.added}++</tspan><tspan class="cc">, </tspan><tspan class="delColor">${r.deleted}--</tspan><tspan class="cc"> )</tspan>`;
     }
 
-    rowsSvg += `  <text x="410" y="${y}">${rightSvg}</text>\n`;
+    rowsSvg += `  <text x="420" y="${y}" xml:space="preserve">${rightSvg}</text>\n`;
   }
 
+  const CARD_WIDTH = 954;
+
   return `<?xml version='1.0' encoding='UTF-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 985 530" width="100%" height="auto" font-family="ConsolasFallback,Consolas,monospace" font-size="16px">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CARD_WIDTH} 530" width="100%" height="auto" xml:space="preserve" font-family="Consolas, 'Courier New', monospace" font-size="16px">
 <defs>
   <clipPath id="cardClip">
-    <rect width="985px" height="530px" rx="15"/>
+    <rect width="${CARD_WIDTH}px" height="530px" rx="15"/>
   </clipPath>
 </defs>
 <style>
-@font-face {
-  src: local('Consolas'), local('Consolas Bold');
-  font-family: 'ConsolasFallback';
-  font-display: swap;
-  -webkit-size-adjust: 109%;
-  size-adjust: 109%;
-}
 .key { fill: ${colors.key}; font-weight: 500; }
 .value { fill: ${colors.value}; }
 .addColor { fill: ${colors.add}; }
@@ -362,7 +390,7 @@ text, tspan { white-space: pre; }
 </style>
 
 <!-- Card Base -->
-<rect width="985px" height="530px" fill="${colors.cardBg}" rx="15" ${colors.border}/>
+<rect width="${CARD_WIDTH}px" height="530px" fill="${colors.cardBg}" rx="15" ${colors.border}/>
 
 <!-- Left Edge-to-Edge Pixel Grid (Unified Background, Zero Padding) -->
 <g clip-path="url(#cardClip)">
@@ -371,7 +399,10 @@ ${pixelRects}
 </g>
 
 <!-- Right Neofetch Content -->
-${rowsSvg}</svg>
+<g clip-path="url(#cardClip)">
+${rowsSvg}
+</g>
+</svg>
 `;
 }
 
@@ -386,8 +417,8 @@ export async function build() {
   console.log(`📊 Fetching stats for @${config.username}...`);
   const stats = await fetchStats(config.username);
 
-  const uptime = calculateUptime(config.uptimeStartDate);
-  console.log(`⏱️  Uptime: ${uptime}`);
+  const uptime = calculateUptime(stats.createdAt || config.uptimeStartDate);
+  console.log(`⏱️  Uptime (from GitHub join date): ${uptime}`);
 
   const rightLines = buildRightLines(stats, uptime);
 
