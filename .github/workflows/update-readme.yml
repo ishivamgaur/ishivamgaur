@@ -1,0 +1,40 @@
+name: Update Dynamic README
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Runs every day at midnight UTC (5:30 AM IST)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Manual trigger from GitHub Actions tab
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate dynamic README
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --staged --quiet || git commit -m "chore: update dynamic terminal stats [skip ci]"
+          git push

@@ -1,14 +1,42 @@
-# Hi I'm Shivam👋
+# Hi, I'm Shivam 👋
 
-A Full Stack Web Developer (MERN) with 2+ year of professional experience.
+<!-- START_SECTION:neofetch -->
+```ansi
+[38;2;201;209;219m              @MNm%                 [0m    [38;2;255;166;87mshivam@gaur[0m [38;2;97;110;127m────────────────────────────────────────────[0m
+[38;2;201;209;219m            |%kjmpb|                [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mOS:[0m[38;2;97;110;127m ............... [0m[38;2;165;214;255mWindows 11, Linux (Ubuntu), Android[0m
+[38;2;201;209;219m           |%%jW@MN%                [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mUptime:[0m[38;2;97;110;127m .................... [0m[38;2;165;214;255m4 years, 3 months, 11 days[0m
+[38;2;201;209;219m          |MN#%p' ;kj               [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mHost:[0m[38;2;97;110;127m ................. [0m[38;2;165;214;255mFull Stack Web Developer (MERN)[0m
+[38;2;201;209;219m          %@MN-` .`-N               [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mKernel:[0m[38;2;97;110;127m .............. [0m[38;2;165;214;255mMongoDB, Express, React, Node.js[0m
+[38;2;201;209;219m         %gW@p` =` '~               [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mIDE:[0m[38;2;97;110;127m ........................ [0m[38;2;165;214;255mVS Code, Cursor, WebStorm[0m
+[38;2;201;209;219m          @gkb ., .`                [0m    [38;2;97;110;127m.[0m
+[38;2;201;209;219m         `j{%|.` .:;.`              [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mLanguages.Programming:[0m[38;2;97;110;127m .. [0m[38;2;165;214;255mJavaScript, TypeScript, Python, C++[0m
+[38;2;201;209;219m    |'|'|'|b~=, .` .`*              [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mLanguages.Computer:[0m[38;2;97;110;127m .. [0m[38;2;165;214;255mHTML5, CSS3, JSON, Tailwind, Next.js[0m
+[38;2;201;209;219m  '|'|'|'|'~;|.'`;,(k@              [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mLanguages.Real:[0m[38;2;97;110;127m ........................ [0m[38;2;165;214;255mEnglish, Hindi[0m
+[38;2;201;209;219m|'|'|'|'.'   j|~bMkj[               [0m    [38;2;97;110;127m.[0m
+[38;2;201;209;219m'|'|'|,/       =,-*:`,}mb           [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mHobbies.Software:[0m[38;2;97;110;127m .. [0m[38;2;165;214;255mWeb Apps, Open Source, UI/UX Design[0m
+[38;2;201;209;219m,'|'|jk|@gk|@gk|. .` jk|@gk|@g      [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mHobbies.Hardware:[0m[38;2;97;110;127m ....... [0m[38;2;165;214;255mCustom Keyboards, PC Building[0m
+[38;2;201;209;219m %:` /%pj{%pj{%pk~=pj{%pj{%pj{%     [0m    [38;2;97;110;127m.[0m
+[38;2;201;209;219m bij-bi}mbi}mbi}mbi}mbi}mbi}mbi}    [0m    [38;2;97;110;127m─ [0m[38;2;201;209;219mContact[0m [38;2;97;110;127m────────────────────────────────────────────────[0m
+[38;2;201;209;219m @gk|@gk|@gk|@gk|@gk|@gk|@gk|@gk    [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mEmail.Personal:[0m[38;2;97;110;127m ................. [0m[38;2;165;214;255mishivamgaur@gmail.com[0m
+[38;2;201;209;219m  {%pj{%pj{%pj{%pj{%pj{%pj{%pj{%p   [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mEmail.Work:[0m[38;2;97;110;127m ..................... [0m[38;2;165;214;255mishivamgaur@gmail.com[0m
+[38;2;201;209;219m   i}mbi}mbi}mbi}mbi}mbi}mbi}mbi}   [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mLinkedIn:[0m[38;2;97;110;127m ................................. [0m[38;2;165;214;255mishivamgaur[0m
+[38;2;201;209;219m     |@gk|@gk|@gk|@gk|@gk|@gk|@gk|  [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mX:[0m[38;2;97;110;127m ........................................ [0m[38;2;165;214;255mishivamgaur[0m
+[38;2;201;209;219m       {%pj{%pj{%pj{%pj{%pj{%pj{%p  [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mInstagram:[0m[38;2;97;110;127m ................................ [0m[38;2;165;214;255mishivamgaur[0m
+[38;2;201;209;219m         }mbi}mbi}mbi}mbi}mbi}mbi}  [0m    [38;2;97;110;127m.[0m
+[38;2;201;209;219m         k|@gk|@gk|@gk|@gk|@gk|@gk| [0m    [38;2;97;110;127m─ [0m[38;2;201;209;219mGitHub Stats[0m [38;2;97;110;127m───────────────────────────────────────────[0m
+[38;2;201;209;219m         %pj{%pj{%pj{%pj{%pj{%pj{%p [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mRepos:[0m[38;2;97;110;127m .... [0m[38;2;165;214;255m38[0m [38;2;255;166;87m{Contributed: [0m[38;2;165;214;255m12[0m[38;2;255;166;87m}[0m [38;2;97;110;127m|[0m [38;2;255;166;87mStars:[0m[38;2;97;110;127m .......... [0m[38;2;165;214;255m38[0m
+[38;2;201;209;219m         i}mbi}mbi}mbi}mbi}mbi}mbi} [0m    [38;2;97;110;127m. [0m[38;2;255;166;87mCommits:[0m[38;2;97;110;127m ................... [0m[38;2;165;214;255m1,450[0m [38;2;97;110;127m|[0m [38;2;255;166;87mFollowers:[0m[38;2;97;110;127m ...... [0m[38;2;165;214;255m29[0m
+[38;2;201;209;219m         gk|@gk|@gk|@gk|@gk|@gk|@gk|[0m    [38;2;97;110;127m. [0m[38;2;255;166;87mLines of Code on GitHub:[0m [38;2;165;214;255m97,810[0m [38;2;97;110;127m( [0m[38;2;63;185;80m132,750++[0m[38;2;97;110;127m, [0m[38;2;248;81;73m34,940--[0m[38;2;97;110;127m )[0m
+```
+<!-- END_SECTION:neofetch -->
 
-I build software and websites that matter to people.  I've created multiple applications and love
-solving real-world problems through code.
+### 🚀 About Me
+- 💼 **Full Stack Web Developer (MERN)** with 2+ years of professional experience
+- 🛠️ Building scalable web applications, clean APIs, and interactive UI/UX
+- 🌱 Exploring modern cloud architecture, developer tooling, and system design
+- 📬 Reach me at **[ishivamgaur@gmail.com](mailto:ishivamgaur@gmail.com)** or connect on **[LinkedIn](https://linkedin.com/in/ishivamgaur)**
 
-## 📫 Connect with Me
-- **Email:** ishivamgaur@gmail.com
-- **LinkedIn:** [ishivamgaur](https://linkedin.com/in/ishivamgaur)
-- **X:** [@ishivamgaur](https://x.com/ishivamgaur)
-- **Instagram:** [@ishivamgaur](https://instagram.com/ishivamgaur)
-
-Let's build something meaningful together! 🚀
+---
+<div align="center">
+  <sub>Generated dynamically with Node.js &amp; GitHub Actions • Pure Selectable ANSI Text</sub>
+</div>
