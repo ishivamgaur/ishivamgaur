@@ -782,8 +782,8 @@ text, tspan { white-space: pre; }
   <text x="420" y="430" xml:space="preserve"><tspan class="cc">. </tspan></text>
   <text x="420" y="450" xml:space="preserve"><tspan class="cc">- </tspan><tspan class="title">GitHub Stats </tspan><tspan class="cc">-------------------------------------------</tspan></text>
   <text x="420" y="470" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Repos: </tspan><tspan class="value">38</tspan><tspan class="key"> {Contributed: </tspan><tspan class="value">12</tspan><tspan class="key">}</tspan><tspan class="cc"> | </tspan><tspan class="key">Stars: </tspan><tspan class="cc">.................</tspan><tspan class="value">38</tspan></text>
-  <text x="420" y="490" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Commits: </tspan><tspan class="value">1,450</tspan><tspan class="cc"> | </tspan><tspan class="key">Followers: </tspan><tspan class="cc">..........................</tspan><tspan class="value">29</tspan></text>
-  <text x="420" y="510" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Lines of Code: </tspan><tspan class="cc">...........</tspan><tspan class="value">97,810</tspan><tspan class="cc"> ( </tspan><tspan class="addColor">132,750++</tspan><tspan class="cc">, </tspan><tspan class="delColor">34,940--</tspan><tspan class="cc"> )</tspan></text>
+  <text x="420" y="490" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Commits:</tspan><tspan class="cc">..............</tspan><tspan class="value">1,450</tspan><tspan class="cc"> | </tspan><tspan class="key">Followers: </tspan><tspan class="cc">.............</tspan><tspan class="value">29</tspan></text>
+  <text x="420" y="510" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Lines of Code:</tspan><tspan class="cc">.......</tspan><tspan class="value">97,810</tspan><tspan class="cc"> ( </tspan><tspan class="addColor">132,750++</tspan><tspan class="cc">, </tspan><tspan class="delColor">34,940-- </tspan><tspan class="cc">.... )</tspan></text>
 
 </g>
 </svg>

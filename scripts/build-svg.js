@@ -209,24 +209,32 @@ function buildRightLines(stats, uptime) {
   const reposStr = stats.repos.toLocaleString();
   const contributedStr = stats.contributed.toLocaleString();
   const starsStr = stats.stars.toLocaleString();
-  // Boilerplate: '. Repos: ' (9) + '{Contributed: ' (14) + '}' (1) + ' | Stars: ' (11) = 35 chars
-  const reposBaseLen = 35 + reposStr.length + contributedStr.length + starsStr.length;
-  const starsDots = '.'.repeat(Math.max(2, TARGET_LEN - reposBaseLen));
+  const reposPrefix = `. Repos: ${reposStr} {Contributed: ${contributedStr}}`;
+  const starsBaseLen = reposPrefix.length + ' | Stars: '.length + starsStr.length;
+  const starsDots = '.'.repeat(Math.max(2, TARGET_LEN - starsBaseLen));
 
-  // Stats line 2 (Commits & Followers) exactly 58 chars
+  // Stats line 2 (Commits & Followers) exactly 58 chars, '|' aligned with line 1
   const commitsStr = stats.commits.toLocaleString();
   const followersStr = stats.followers.toLocaleString();
-  // Boilerplate: '. Commits: ' (11) + ' | Followers: ' (14) = 25 chars
-  const commitsBaseLen = 25 + commitsStr.length + followersStr.length;
-  const followersDots = '.'.repeat(Math.max(2, TARGET_LEN - commitsBaseLen));
+  // Dots between 'Commits:' label and commits value so count sits right before '|'
+  const commitsDotsCount = reposPrefix.length - (2 + 'Commits:'.length + commitsStr.length);
+  const commitsDots = '.'.repeat(Math.max(2, commitsDotsCount));
 
-  // Stats line 3 (Lines of Code) exactly 58 chars
+  const followersBaseLen = reposPrefix.length + ' | Followers: '.length + followersStr.length;
+  const followersDots = '.'.repeat(Math.max(2, TARGET_LEN - followersBaseLen));
+
+  // Stats line 3 (Lines of Code) exactly 58 chars, '(' aligned with '|' of lines above
   const locStr = stats.netLoc.toLocaleString();
   const addedStr = stats.additions.toLocaleString();
   const delStr = stats.deletions.toLocaleString();
-  // Boilerplate: '. Lines of Code: ' (17) + ' ( ' (3) + '++, ' (4) + '-- )' (4) = 28 chars
-  const locBaseLen = 28 + locStr.length + addedStr.length + delStr.length;
-  const locDots = '.'.repeat(Math.max(2, TARGET_LEN - locBaseLen));
+  // Dots between 'Lines of Code:' label and loc value so count sits right before '('
+  const locMidDotsCount = reposPrefix.length - (2 + 'Lines of Code:'.length + locStr.length);
+  const locMidDots = '.'.repeat(Math.max(2, locMidDotsCount));
+
+  // Content inside parenthesis with space before end dots
+  const insideParen = `${addedStr}++, ${delStr}-- `;
+  const endDotsCount = TARGET_LEN - (reposPrefix.length + 3 + insideParen.length + 2);
+  const endDots = '.'.repeat(Math.max(2, endDotsCount));
 
   return [
     // 0: Header
@@ -297,16 +305,18 @@ function buildRightLines(stats, uptime) {
     {
       type: 'stats_commits_followers',
       commits: commitsStr,
+      commitsDots: commitsDots,
       followersDots: followersDots,
       followers: followersStr,
     },
     // 24: Lines of Code (58 chars total)
     {
       type: 'stats_loc',
-      dots: locDots,
       loc: locStr,
+      locMidDots: locMidDots,
       added: addedStr,
       deleted: delStr,
+      endDots: endDots,
     },
   ];
 }
@@ -362,9 +372,9 @@ function renderSvg(theme, gridData, rightLines) {
     } else if (r.type === 'stats_repos_stars') {
       rightSvg = `<tspan class="cc">. </tspan><tspan class="key">Repos: </tspan><tspan class="value">${r.repos}</tspan><tspan class="key"> {Contributed: </tspan><tspan class="value">${r.contributed}</tspan><tspan class="key">}</tspan><tspan class="cc"> | </tspan><tspan class="key">Stars: </tspan><tspan class="cc">${r.starsDots}</tspan><tspan class="value">${r.stars}</tspan>`;
     } else if (r.type === 'stats_commits_followers') {
-      rightSvg = `<tspan class="cc">. </tspan><tspan class="key">Commits: </tspan><tspan class="value">${r.commits}</tspan><tspan class="cc"> | </tspan><tspan class="key">Followers: </tspan><tspan class="cc">${r.followersDots}</tspan><tspan class="value">${r.followers}</tspan>`;
+      rightSvg = `<tspan class="cc">. </tspan><tspan class="key">Commits:</tspan><tspan class="cc">${r.commitsDots}</tspan><tspan class="value">${r.commits}</tspan><tspan class="cc"> | </tspan><tspan class="key">Followers: </tspan><tspan class="cc">${r.followersDots}</tspan><tspan class="value">${r.followers}</tspan>`;
     } else if (r.type === 'stats_loc') {
-      rightSvg = `<tspan class="cc">. </tspan><tspan class="key">Lines of Code: </tspan><tspan class="cc">${r.dots}</tspan><tspan class="value">${r.loc}</tspan><tspan class="cc"> ( </tspan><tspan class="addColor">${r.added}++</tspan><tspan class="cc">, </tspan><tspan class="delColor">${r.deleted}--</tspan><tspan class="cc"> )</tspan>`;
+      rightSvg = `<tspan class="cc">. </tspan><tspan class="key">Lines of Code:</tspan><tspan class="cc">${r.locMidDots}</tspan><tspan class="value">${r.loc}</tspan><tspan class="cc"> ( </tspan><tspan class="addColor">${r.added}++</tspan><tspan class="cc">, </tspan><tspan class="delColor">${r.deleted}-- </tspan><tspan class="cc">${r.endDots} )</tspan>`;
     }
 
     rowsSvg += `  <text x="420" y="${y}" xml:space="preserve">${rightSvg}</text>\n`;
