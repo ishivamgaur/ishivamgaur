@@ -1,48 +1,42 @@
 // ╔══════════════════════════════════════════════════════════════╗
 // ║                ⚙️  PROFILE CONFIGURATION                     ║
 // ║                                                            ║
-// ║  Edit your details here to customize your dynamic README.  ║
-// ║  Anyone can fork this repository, update this file, and    ║
-// ║  have their own neofetch terminal card in minutes!         ║
+// ║  Shivam Gaur — Full-Stack MERN Developer                   ║
 // ╚══════════════════════════════════════════════════════════════╝
 
 export default {
   // ─── GitHub Credentials ──────────────────────────────────────
   username: 'ishivamgaur',
 
-  // ─── Terminal Prompt (e.g. shivam@gaur) ──────────────────────
+  // ─── Terminal Prompt ─────────────────────────────────────────
   name: 'shivam',
   host: 'gaur',
 
-  // ─── Profile Avatar (image used for left-side ASCII art) ────
-  // Supports transparent PNG, JPEG, WebP. Transparent PNGs look best!
+  // ─── Profile Avatar ──────────────────────────────────────────
   avatarImage: 'avatar.png',
   asciiWidth: 38,
   asciiHeight: 25,
 
-  // ─── Uptime (Start date for dynamic counter: YYYY-MM-DD) ────
-  // Set to your birthday (for age) or when you started coding!
-  uptimeStartDate: '2022-06-01',
+  // ─── Experience Start Date (1.6+ Years Experience) ───────────
+  uptimeStartDate: '2025-01-01',
 
-  // ─── System & Work Info ──────────────────────────────────────
-  os: 'Windows 11, Linux (Ubuntu), Android',
-  role: 'Full Stack Web Developer (MERN)',
-  kernel: 'MongoDB, Express, React, Node.js',
-  ide: 'VS Code, Cursor, WebStorm',
+  // ─── Professional Info ───────────────────────────────────────
+  role: 'Full-Stack MERN Developer',
+  kernel: 'React, Next.js, Node.js, Express',
+  databases: 'MongoDB, PostgreSQL, Redis',
+  devops: 'AWS EC2, Docker, Nginx, Linux',
 
-  // ─── Languages ───────────────────────────────────────────────
-  languagesProgramming: 'JavaScript, TypeScript, Python, C++',
-  languagesComputer: 'HTML5, CSS3, JSON, Tailwind, Next.js',
-  languagesReal: 'English, Hindi',
+  // ─── Skills ──────────────────────────────────────────────────
+  languagesCode: 'JavaScript, TypeScript',
+  frontend: 'React, Next.js, React Native, Tailwind',
+  backend: 'Node.js, Express, Socket.io, REST APIs',
+  ai: 'AI Chatbots, GenAI, LLM APIs',
+  tools: 'Git, GitHub Actions, Postman, CI',
+  focus: 'Scalable Real-Time Web Applications',
 
-  // ─── Hobbies ─────────────────────────────────────────────────
-  hobbiesSoftware: 'Web Apps, Open Source, UI/UX Design',
-  hobbiesHardware: 'Custom Keyboards, PC Building',
-
-  // ─── Contact Information ─────────────────────────────────────
-  emailPersonal: 'ishivamgaur@gmail.com',
-  emailWork: 'ishivamgaur@gmail.com',
+  // ─── Location & Contact ──────────────────────────────────────
+  location: 'Greater Noida, India',
+  email: 'ishivamgaur@gmail.com',
   linkedin: 'ishivamgaur',
   twitter: 'ishivamgaur',
-  instagram: 'ishivamgaur',
 };
