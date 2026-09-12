@@ -52,54 +52,127 @@ function calculateUptime(startDateStr) {
   return `${yStr}, ${mStr}, ${dStr}${isBirthday ? ' 🎂' : ''}`;
 }
 
-// ─── GENERATE EDGE-TO-EDGE PIXEL GRID ─────────────────────────
-async function generatePixelGrid(imagePath) {
+// ─── GENERATE MATRIX ASCII ART PORTRAIT ───────────────────────
+async function generateAsciiArt(imagePath) {
   const trimmed = await sharp(imagePath).trim().toBuffer();
   const meta = await sharp(trimmed).metadata();
 
-  // Enlarge avatar to 360px with exact 25px left margin
-  const gridW = 360;
-  const gridH = 530;
+  const imgAspect = meta.width / meta.height; // ~0.9266
+  const targetWidth = 360;
+  const fontSize = 7;
+  const charW = 4.2; // 0.6 * fontSize
+  const charH = 8.5; // vertical line step
 
-  const cols = 33;
-  const rows = 48;
-  const cellW = gridW / cols;
-  const cellH = gridH / rows;
-
-  // Perfect natural aspect ratio (0.927) taking full 360px width
-  const avatarCols = 33;
-  const avatarRows = Math.round(avatarCols / (meta.width / meta.height)); // 36 rows
+  const cols = Math.round(targetWidth / charW); // 86
+  const targetHeight = targetWidth / imgAspect; // 388.5
+  const rows = Math.round(targetHeight / charH); // 46
 
   const { data } = await sharp(trimmed)
-    .resize(avatarCols, avatarRows, { fit: 'fill' })
+    .resize(cols, rows, { fit: 'fill' })
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
 
-  const avatarStartRow = rows - avatarRows; // Sits firmly on the bottom edge
+  const codeGlyphs = '01{}[]();:=+*#@%?!/~$_|abcdefghijklmnopqrstuvwxyz';
+  const densityRamp = ' .:-=+*#%@';
 
-  let pixelRects = '';
-  for (let r = 0; r < avatarRows; r++) {
-    for (let c = 0; c < avatarCols; c++) {
-      const idx = (r * avatarCols + c) * 4;
-      const red = data[idx];
-      const green = data[idx + 1];
-      const blue = data[idx + 2];
-      const alpha = data[idx + 3];
+  function buildAsciiSvg(isDark) {
+    const startX = 25;
+    const startY = 530 - (rows * charH);
 
-      if (alpha < 35) continue;
+    let rowsSvg = '';
+    for (let r = 0; r < rows; r++) {
+      const y = (startY + r * charH).toFixed(1);
+      let line = [];
+      for (let c = 0; c < cols; c++) {
+        const idx = (r * cols + c) * 4;
+        const red = data[idx];
+        const green = data[idx + 1];
+        const blue = data[idx + 2];
+        const alpha = data[idx + 3];
 
-      // Exactly 25px left margin matching the 25px right margin
-      const x = (25 + c * cellW + 0.5).toFixed(1);
-      const y = (avatarStartRow * cellH + r * cellH + 0.5).toFixed(1);
-      const w = (cellW - 1).toFixed(1);
-      const h = (cellH - 1).toFixed(1);
-      const hex = '#' + [red, green, blue].map(v => v.toString(16).padStart(2, '0')).join('');
-      pixelRects += `    <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${hex}" rx="1"/>\n`;
+        if (alpha < 35) {
+          line.push({ char: ' ', color: 'transparent' });
+          continue;
+        }
+
+        const lum = 0.299 * red + 0.587 * green + 0.114 * blue;
+        let char = ' ';
+        let hexColor = '';
+
+        if (isDark) {
+          // Dark theme (#0d1017)
+          if (lum < 45) {
+            const glyphIdx = (r * 7 + c * 13) % codeGlyphs.length;
+            char = codeGlyphs[glyphIdx];
+            hexColor = '#3d444d'; // subtle slate gray
+          } else if (lum < 110) {
+            const glyphIdx = (r * 5 + c * 11) % codeGlyphs.length;
+            char = codeGlyphs[glyphIdx];
+            hexColor = '#656d76';
+          } else if (lum < 180) {
+            const glyphIdx = Math.floor((lum / 255) * densityRamp.length);
+            char = densityRamp[Math.min(densityRamp.length - 1, glyphIdx)];
+            hexColor = '#a5d6ff'; // light blue accent
+          } else {
+            char = '@';
+            hexColor = '#ffffff';
+          }
+        } else {
+          // Light theme (#ffffff)
+          if (lum < 45) {
+            const glyphIdx = (r * 7 + c * 13) % codeGlyphs.length;
+            char = codeGlyphs[glyphIdx];
+            hexColor = '#24292f'; // dark charcoal
+          } else if (lum < 110) {
+            const glyphIdx = (r * 5 + c * 11) % codeGlyphs.length;
+            char = codeGlyphs[glyphIdx];
+            hexColor = '#57606a';
+          } else if (lum < 180) {
+            const glyphIdx = Math.floor((lum / 255) * densityRamp.length);
+            char = densityRamp[Math.min(densityRamp.length - 1, glyphIdx)];
+            hexColor = '#0969da'; // GitHub blue accent
+          } else {
+            char = '@';
+            hexColor = '#0969da';
+          }
+        }
+
+        line.push({ char, color: hexColor });
+      }
+
+      let tspans = '';
+      let curColor = null;
+      let curText = '';
+
+      line.forEach(cell => {
+        if (cell.color === curColor) {
+          curText += cell.char;
+        } else {
+          if (curText) {
+            if (curColor === 'transparent') {
+              tspans += `<tspan>${curText}</tspan>`;
+            } else {
+              tspans += `<tspan fill="${curColor}">${curText}</tspan>`;
+            }
+          }
+          curColor = cell.color;
+          curText = cell.char;
+        }
+      });
+      if (curText) {
+        if (curColor === 'transparent') {
+          tspans += `<tspan>${curText}</tspan>`;
+        } else {
+          tspans += `<tspan fill="${curColor}">${curText}</tspan>`;
+        }
+      }
+      rowsSvg += `    <text x="${startX}" y="${y}">${tspans}</text>\n`;
     }
+    return rowsSvg;
   }
 
-  return { gridW, gridH, cols, rows, cellW, cellH, pixelRects };
+  return { buildAsciiSvg, fontSize };
 }
 
 // ─── FETCH LIVE GITHUB STATS ──────────────────────────────────
@@ -322,14 +395,13 @@ function buildRightLines(stats, uptime) {
 }
 
 // ─── RENDER RESPONSIVE SVG (DARK & LIGHT) ─────────────────────
-function renderSvg(theme, gridData, rightLines) {
+function renderSvg(theme, asciiData, rightLines) {
   const isDark = theme === 'dark';
 
   const colors = isDark
     ? {
-        cardBg: '#161b22',
+        cardBg: '#0d1017',   // Dark mode background per user request
         border: '',
-        gridLine: '#21262d',
         key: '#ffa657',      // Orange
         value: '#a5d6ff',    // Light blue
         cc: '#616e7f',       // Gray dots
@@ -338,9 +410,8 @@ function renderSvg(theme, gridData, rightLines) {
         title: '#c9d1d9',
       }
     : {
-        cardBg: '#ffffff',
+        cardBg: '#ffffff',   // Light mode background
         border: 'stroke="#d0d7de" stroke-width="1"',
-        gridLine: '#e1e4e8',
         key: '#bc4c00',      // Deep orange
         value: '#0969da',    // GitHub blue
         cc: '#6e7781',       // Neutral gray
@@ -349,10 +420,7 @@ function renderSvg(theme, gridData, rightLines) {
         title: '#24292f',
       };
 
-  const { gridW, gridH, cols, rows, cellW, cellH, pixelRects } = gridData;
-
-  // Grid lines disabled (opacity 0) per user preference
-  let gridLines = '';
+  const leftAsciiSvg = asciiData.buildAsciiSvg(isDark);
 
   // Generate right column lines
   let rowsSvg = '';
@@ -383,33 +451,32 @@ function renderSvg(theme, gridData, rightLines) {
   const CARD_WIDTH = 954;
 
   return `<?xml version='1.0' encoding='UTF-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CARD_WIDTH} 530" width="100%" height="auto" xml:space="preserve" font-family="Consolas, 'Courier New', monospace" font-size="16px">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CARD_WIDTH} 530" width="100%" height="auto" xml:space="preserve" font-family="Consolas, 'Courier New', monospace">
 <defs>
   <clipPath id="cardClip">
     <rect width="${CARD_WIDTH}px" height="530px" rx="15"/>
   </clipPath>
 </defs>
 <style>
-.key { fill: ${colors.key}; font-weight: 500; }
-.value { fill: ${colors.value}; }
-.addColor { fill: ${colors.add}; }
-.delColor { fill: ${colors.del}; }
-.cc { fill: ${colors.cc}; }
-.title { fill: ${colors.title}; }
+.key { fill: ${colors.key}; font-weight: 500; font-size: 16px; }
+.value { fill: ${colors.value}; font-size: 16px; }
+.addColor { fill: ${colors.add}; font-size: 16px; }
+.delColor { fill: ${colors.del}; font-size: 16px; }
+.cc { fill: ${colors.cc}; font-size: 16px; }
+.title { fill: ${colors.title}; font-size: 16px; }
 text, tspan { white-space: pre; }
 </style>
 
 <!-- Card Base -->
 <rect width="${CARD_WIDTH}px" height="530px" fill="${colors.cardBg}" rx="15" ${colors.border}/>
 
-<!-- Left Edge-to-Edge Pixel Grid (Unified Background, Zero Padding) -->
-<g clip-path="url(#cardClip)">
-${gridLines}
-${pixelRects}
+<!-- Left Matrix ASCII Art Portrait -->
+<g clip-path="url(#cardClip)" font-size="${asciiData.fontSize}px">
+${leftAsciiSvg}
 </g>
 
 <!-- Right Neofetch Content -->
-<g clip-path="url(#cardClip)">
+<g clip-path="url(#cardClip)" font-size="16px">
 ${rowsSvg}
 </g>
 </svg>
@@ -418,11 +485,11 @@ ${rowsSvg}
 
 // ─── MAIN EXECUTION ───────────────────────────────────────────
 export async function build() {
-  console.log('🚀 Building Neofetch Terminal SVGs with edge-to-edge pixel grid...\n');
+  console.log('🚀 Building Neofetch Terminal SVGs with Matrix ASCII Art Portrait...\n');
 
   const avatarPath = path.join(ROOT, config.avatarImage);
-  console.log('🎨 Generating zero-padding pixel grid...');
-  const gridData = await generatePixelGrid(avatarPath);
+  console.log('🎨 Generating matrix ASCII art portrait (preserving natural aspect ratio)...');
+  const asciiData = await generateAsciiArt(avatarPath);
 
   console.log(`📊 Fetching stats for @${config.username}...`);
   const stats = await fetchStats(config.username);
@@ -433,8 +500,8 @@ export async function build() {
   const rightLines = buildRightLines(stats, uptime);
 
   console.log('🖼️  Writing responsive dark_mode.svg and light_mode.svg...');
-  const darkSvg = renderSvg('dark', gridData, rightLines);
-  const lightSvg = renderSvg('light', gridData, rightLines);
+  const darkSvg = renderSvg('dark', asciiData, rightLines);
+  const lightSvg = renderSvg('light', asciiData, rightLines);
 
   fs.writeFileSync(path.join(ROOT, 'dark_mode.svg'), darkSvg, 'utf8');
   fs.writeFileSync(path.join(ROOT, 'light_mode.svg'), lightSvg, 'utf8');
@@ -452,7 +519,7 @@ export async function build() {
 
   fs.writeFileSync(path.join(ROOT, 'README.md'), readmeContent, 'utf8');
 
-  console.log('✅ Successfully built edge-to-edge pixel grid SVGs and README.md!');
+  console.log('✅ Successfully built Matrix ASCII Art SVGs and README.md!');
 }
 
 build().catch((err) => {
