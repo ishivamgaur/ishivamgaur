@@ -222,9 +222,14 @@ async function fetchStats(username) {
             }
           }
         `;
+        const gqlHeaders = {
+              ...headers,
+              Authorization: `bearer ${token}`,
+              'Content-Type': 'application/json',
+            };
         const gqlRes = await fetch('https://api.github.com/graphql', {
           method: 'POST',
-          headers,
+          headers: gqlHeaders,
           body: JSON.stringify({ query, variables: { login: username } }),
         });
         if (gqlRes.ok) {
