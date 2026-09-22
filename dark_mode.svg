@@ -73,7 +73,7 @@ text, tspan { white-space: pre; }
 <g clip-path="url(#cardClip)" font-size="16px">
   <text x="420" y="30" xml:space="preserve"><tspan class="key">shivam@gaur </tspan><tspan class="cc">----------------------------------------------</tspan></text>
   <text x="420" y="50" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Host:</tspan><tspan class="cc">...............................</tspan><tspan class="value">Full Stack Developer</tspan></text>
-  <text x="420" y="70" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Uptime:</tspan><tspan class="cc">.......................</tspan><tspan class="value">2 years, 9 months, 22 days</tspan></text>
+  <text x="420" y="70" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Uptime:</tspan><tspan class="cc">.......................</tspan><tspan class="value">2 years, 9 months, 23 days</tspan></text>
   <text x="420" y="90" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Kernel:</tspan><tspan class="cc">.................</tspan><tspan class="value">React, Next.js, Node.js, Express</tspan></text>
   <text x="420" y="110" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Databases:</tspan><tspan class="cc">....................</tspan><tspan class="value">MongoDB, PostgreSQL, Redis</tspan></text>
   <text x="420" y="130" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">DevOps:</tspan><tspan class="cc">....................</tspan><tspan class="value">AWS EC2, Docker, Nginx, Linux</tspan></text>
@@ -93,9 +93,9 @@ text, tspan { white-space: pre; }
   <text x="420" y="410" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Location:</tspan><tspan class="cc">...........................</tspan><tspan class="value">Greater Noida, India</tspan></text>
   <text x="420" y="430" xml:space="preserve"><tspan class="cc">. </tspan></text>
   <text x="420" y="450" xml:space="preserve"><tspan class="cc">- </tspan><tspan class="title">GitHub Stats </tspan><tspan class="cc">-------------------------------------------</tspan></text>
-  <text x="420" y="470" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Repos: </tspan><tspan class="value">38</tspan><tspan class="key"> {Contributed: </tspan><tspan class="value">4</tspan><tspan class="key">}</tspan><tspan class="cc"> | </tspan><tspan class="key">Stars: </tspan><tspan class="cc">..................</tspan><tspan class="value">38</tspan></text>
-  <text x="420" y="490" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Commits:</tspan><tspan class="cc">.............</tspan><tspan class="value">1,325</tspan><tspan class="cc"> | </tspan><tspan class="key">Followers: </tspan><tspan class="cc">..............</tspan><tspan class="value">29</tspan></text>
-  <text x="420" y="510" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Lines of Code:</tspan><tspan class="cc">......</tspan><tspan class="value">89,935</tspan><tspan class="cc"> ( </tspan><tspan class="addColor">122,125++</tspan><tspan class="cc">, </tspan><tspan class="delColor">32,190-- </tspan><tspan class="cc">..... )</tspan></text>
+  <text x="420" y="470" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Repos: </tspan><tspan class="value">39</tspan><tspan class="key"> {Contributed: </tspan><tspan class="value">4</tspan><tspan class="key">}</tspan><tspan class="cc"> | </tspan><tspan class="key">Stars: </tspan><tspan class="cc">..................</tspan><tspan class="value">38</tspan></text>
+  <text x="420" y="490" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Commits:</tspan><tspan class="cc">.............</tspan><tspan class="value">1,334</tspan><tspan class="cc"> | </tspan><tspan class="key">Followers: </tspan><tspan class="cc">..............</tspan><tspan class="value">29</tspan></text>
+  <text x="420" y="510" xml:space="preserve"><tspan class="cc">. </tspan><tspan class="key">Lines of Code:</tspan><tspan class="cc">......</tspan><tspan class="value">90,672</tspan><tspan class="cc"> ( </tspan><tspan class="addColor">123,140++</tspan><tspan class="cc">, </tspan><tspan class="delColor">32,468-- </tspan><tspan class="cc">..... )</tspan></text>
 
 </g>
 </svg>
