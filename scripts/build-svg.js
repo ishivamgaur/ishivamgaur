@@ -96,9 +96,9 @@ let odoId = 0;
 // Pure SMIL — no JavaScript — so it animates inside GitHub READMEs.
 // Renders one number string left-to-right from (x, baseline y); each digit
 // rolls from 0 to its final value with an ease-out spline. Returns {svg, width}.
-function odometer(x, y, str, { fill, fs = 16, weight = 700, dur = 1.4, delay = 0 } = {}) {
+function odometer(x, y, str, { fill, fs = 16, weight = 700, dur = 1.2, delay = 0, adv = null } = {}) {
   const MONO = `font-family="Consolas, 'Courier New', monospace"`;
-  const A = 0.6 * fs; // monospace advance per char
+  const A = adv ?? 0.6 * fs; // monospace advance per char
   const LH = fs; // digit pitch
   const cw = 0.62 * fs; // clip width
   let cx = x, out = '', di = 0;
@@ -107,7 +107,7 @@ function odometer(x, y, str, { fill, fs = 16, weight = 700, dur = 1.4, delay = 0
       const d = +ch;
       const ccx = cx + A / 2;
       const id = `odo${odoId++}`;
-      const begin = (delay + di * 0.09).toFixed(2);
+      const begin = (delay + di * 0.08).toFixed(2);
       out += `<g><clipPath id="${id}"><rect x="${(ccx - cw / 2).toFixed(1)}" y="${(y - fs * 0.85).toFixed(1)}" width="${cw.toFixed(1)}" height="${(fs * 0.85 + 1).toFixed(1)}"/></clipPath><g clip-path="url(#${id})"><g><animateTransform attributeName="transform" type="translate" from="0 0" to="0 ${-d * LH}" dur="${dur}s" begin="${begin}s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.25 0.8 0.3 1"/>`;
       for (let k = 0; k <= 9; k++) {
         out += `<text x="${ccx.toFixed(1)}" y="${y + k * LH}" font-size="${fs}" font-weight="${weight}" text-anchor="middle" fill="${fill}" ${MONO}>${k}</text>`;
@@ -148,7 +148,7 @@ function buildLeftWidgets(stats, w) {
 
   // ── Animated line graph (draw-on + fading area + pulsing tip) ──
   // Full inner width (25 → 375), 12px title→chart pad like other sections.
-  const GX = X0, GW = LEFT_INNER_W, GB = 250, GH = 170, GT = GB - GH;
+  const GX = X0, GW = LEFT_INNER_W, GB = 244, GH = 180, GT = GB - GH;
   const pts = weekly.map((v, i) => ({
     x: +(GX + (i * GW) / (WEEKS - 1)).toFixed(1),
     y: +(GB - (v / peak) * GH).toFixed(1),
@@ -159,7 +159,7 @@ function buildLeftWidgets(stats, w) {
   const lineColor = w.graph[4];
 
   let svg = '';
-  svg += `<text x="${X0}" y="68" font-size="14" font-weight="700" fill="${w.title}" ${MONO}>Activity · 6 mo</text>`;
+  svg += `<text x="${X0}" y="30" font-size="16" font-weight="700" fill="${w.title}" ${MONO}>Activity · 6 mo</text>`;
   // Header numbers roll up like an odometer; words stay static.
   {
     const A12 = 0.6 * 12;
@@ -167,24 +167,24 @@ function buildLeftWidgets(stats, w) {
     const s1 = ' total · peak ', s2 = '/wk';
     const totalW = (tStr.length + s1.length + pStr.length + s2.length) * A12;
     let hx = X0 + LEFT_INNER_W - totalW;
-    const o1 = odometer(hx, 68, tStr, { fill: w.value, fs: 12, delay: 0.1 });
+    const o1 = odometer(hx, 52, tStr, { fill: w.value, fs: 12, delay: 0.1 });
     svg += o1.svg;
     hx += o1.width;
-    svg += `<text x="${hx.toFixed(1)}" y="68" font-size="12" fill="${w.label}" ${MONO}>${s1}</text>`;
+    svg += `<text x="${hx.toFixed(1)}" y="52" font-size="12" fill="${w.label}" ${MONO}>${s1}</text>`;
     hx += s1.length * A12;
-    const o2 = odometer(hx, 68, pStr, { fill: w.value, fs: 12, delay: 0.3 });
+    const o2 = odometer(hx, 52, pStr, { fill: w.value, fs: 12, delay: 0.3 });
     svg += o2.svg;
     hx += o2.width;
-    svg += `<text x="${hx.toFixed(1)}" y="68" font-size="12" fill="${w.label}" ${MONO}>${s2}</text>`;
+    svg += `<text x="${hx.toFixed(1)}" y="52" font-size="12" fill="${w.label}" ${MONO}>${s2}</text>`;
   }
   svg += `<linearGradient id="areaFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lineColor}" stop-opacity="0.35"/><stop offset="1" stop-color="${lineColor}" stop-opacity="0"/></linearGradient>`;
   for (const f of [0, 0.5, 1]) {
     const gy = (GB - f * GH).toFixed(1);
     svg += `<line x1="${GX}" y1="${gy}" x2="${GX + GW}" y2="${gy}" stroke="${w.tileBorder}" stroke-width="1" opacity="0.7"/>`;
   }
-  svg += `<path d="${area}" fill="url(#areaFade)" opacity="0"><animate attributeName="opacity" from="0" to="1" dur="1s" begin="0.9s" fill="freeze"/></path>`;
-  svg += `<path d="${line}" fill="none" stroke="${lineColor}" stroke-width="2.5" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"><animate attributeName="stroke-dashoffset" from="100" to="0" dur="1.6s" fill="freeze"/></path>`;
-  svg += `<circle cx="${tip.x}" cy="${tip.y}" r="4" fill="${lineColor}" stroke="${w.tileBg}" stroke-width="2"><animate attributeName="r" values="3.5;5.5;3.5" dur="2s" repeatCount="indefinite"/></circle>`;
+  svg += `<path d="${area}" fill="url(#areaFade)" opacity="0"><animate attributeName="opacity" from="0" to="1" dur="1.2s" begin="0.3s" fill="freeze"/></path>`;
+  svg += `<path d="${line}" fill="none" stroke="${lineColor}" stroke-width="2.5" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"><animate attributeName="stroke-dashoffset" from="100" to="0" dur="1.2s" fill="freeze"/></path>`;
+  svg += `<circle cx="${tip.x}" cy="${tip.y}" r="4" fill="${lineColor}" stroke="${w.tileBg}" stroke-width="2"><animate attributeName="r" values="3.5;5.5;3.5" dur="2.4s" repeatCount="indefinite"/></circle>`;
 
   // ── Totals strip: 4 mini stats, numbers roll up, same blue as top ──
   const groups = [
@@ -195,9 +195,9 @@ function buildLeftWidgets(stats, w) {
   ];
   groups.forEach(([val, label], gi) => {
     const cx = X0 + (LEFT_INNER_W * (gi + 0.5)) / 4;
-    const o = odometer(cx - (val.length * 0.6 * 16) / 2, 276, val, { fill: w.value, fs: 16, delay: 0.2 + gi * 0.15 });
+    const o = odometer(cx - (val.length * 0.6 * 16) / 2, 270, val, { fill: w.value, fs: 16, delay: 0.2 + gi * 0.15 });
     svg += o.svg;
-    svg += `<text x="${cx.toFixed(1)}" y="294" font-size="10" text-anchor="middle" fill="${w.label}" ${MONO} opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.8s" begin="0.5s" fill="freeze"/>${label}</text>`;
+    svg += `<text x="${cx.toFixed(1)}" y="292" font-size="10" text-anchor="middle" fill="${w.label}" ${MONO} opacity="0"><animate attributeName="opacity" from="0" to="1" dur="1.2s" begin="0.3s" fill="freeze"/>${label}</text>`;
   });
 
   // ── Contribution heatmap: full width + month labels, GitHub-style ──
@@ -215,10 +215,10 @@ function buildLeftWidgets(stats, w) {
   const levelOf = (hday, c) => (hday && hday.level != null
     ? Math.min(4, Math.max(0, hday.level))
     : compLevel(c));
-  const GY = 372;
-  svg += `<text x="${X0}" y="334" font-size="14" font-weight="700" fill="${w.title}" ${MONO}>Daily contributions</text>`;
+  const GY = 364;
+  svg += `<text x="${X0}" y="334" font-size="16" font-weight="700" fill="${w.title}" ${MONO}>Daily contributions</text>`;
   if (stats.streak != null) {
-    svg += `<text x="${X0 + LEFT_INNER_W}" y="334" font-size="12" text-anchor="end" fill="${w.key}" ${MONO}>${stats.streak}-day streak · best ${stats.longestStreak}</text>`;
+    svg += `<text x="${X0 + LEFT_INNER_W}" y="334" font-size="12" text-anchor="end" fill="${w.key}" ${MONO}>${stats.streak}-day streak</text>`;
   }
   // Month label above each month's first column (GitHub-style).
   let prevYM = -1;
@@ -240,7 +240,7 @@ function buildLeftWidgets(stats, w) {
     }
   }
   for (let wk = 0; wk < HWEEKS; wk++) {
-    svg += `<g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.45s" begin="${(0.9 + wk * 0.05).toFixed(2)}s" fill="freeze"/>`;
+    svg += `<g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="1.2s" begin="${(0.3 + wk * 0.05).toFixed(2)}s" fill="freeze"/>`;
     for (let d = 0; d < 7; d++) {
       const hday = hdays[wk * 7 + d];
       const c = hday ? hday.count : 0;
@@ -251,7 +251,7 @@ function buildLeftWidgets(stats, w) {
   }
 
   // Less → More key, right-aligned like GitHub.
-  const keyY = 480;
+  const keyY = 474;
   svg += `<text x="273" y="${keyY}" font-size="10" text-anchor="end" fill="${w.label}" ${MONO}>Less</text>`;
   w.graph.forEach((g, i) => {
     svg += `<rect x="${281 + i * (CELL + 3)}" y="${keyY - 9}" width="10" height="10" rx="2" fill="${g}"/>`;
@@ -578,6 +578,25 @@ function renderSvg(theme, stats, rightLines) {
 
   const leftWidgetsSvg = buildLeftWidgets(stats, widget);
 
+  // Right-column composer for animated stat rows: odometer numbers inline
+  // with static words, every piece width-locked (textLength) to the 58-char
+  // grid so dot leaders stay put in any font. A matches the column grid.
+  const RA = 8.8;
+  const tender = (yy, segs, delay) => {
+    let rx = 420, out = '';
+    for (const s of segs) {
+      if (s.n !== undefined) {
+        const o = odometer(rx, yy, s.n, { fill: colors.value, fs: 16, weight: 400, delay, adv: RA });
+        out += o.svg;
+        rx += o.width;
+      } else {
+        out += `<text x="${rx.toFixed(1)}" y="${yy}" font-size="16" font-family="Consolas, 'Courier New', monospace" textLength="${(s.t.length * RA).toFixed(1)}" lengthAdjust="spacing" xml:space="preserve"><tspan class="${s.cls}">${s.t}</tspan></text>`;
+        rx += s.t.length * RA;
+      }
+    }
+    return out;
+  };
+
   // Generate right column lines
   let rowsSvg = '';
   for (let i = 0; i < 25; i++) {
@@ -594,11 +613,27 @@ function renderSvg(theme, stats, rightLines) {
     } else if (r.type === 'kv') {
       rightSvg = `<tspan class="cc">. </tspan><tspan class="key">${r.key}</tspan><tspan class="cc">${r.dots}</tspan><tspan class="value">${r.value}</tspan>`;
     } else if (r.type === 'stats_repos_stars') {
-      rightSvg = `<tspan class="cc">. </tspan><tspan class="key">Repos: </tspan><tspan class="value">${r.repos}</tspan><tspan class="key"> {Contributed: </tspan><tspan class="value">${r.contributed}</tspan><tspan class="key">}</tspan><tspan class="cc"> | </tspan><tspan class="key">Stars: </tspan><tspan class="cc">${r.starsDots}</tspan><tspan class="value">${r.stars}</tspan>`;
+      rowsSvg += `  ${tender(y, [
+        { t: '. ', cls: 'cc' }, { t: 'Repos: ', cls: 'key' }, { n: r.repos },
+        { t: ' {Contributed: ', cls: 'key' }, { n: r.contributed },
+        { t: '}', cls: 'key' }, { t: ' | ', cls: 'cc' }, { t: 'Stars: ', cls: 'key' },
+        { t: r.starsDots, cls: 'cc' }, { n: r.stars },
+      ], 0.2)}\n`;
+      continue;
     } else if (r.type === 'stats_commits_followers') {
-      rightSvg = `<tspan class="cc">. </tspan><tspan class="key">Commits:</tspan><tspan class="cc">${r.commitsDots}</tspan><tspan class="value">${r.commits}</tspan><tspan class="cc"> | </tspan><tspan class="key">Followers: </tspan><tspan class="cc">${r.followersDots}</tspan><tspan class="value">${r.followers}</tspan>`;
+      rowsSvg += `  ${tender(y, [
+        { t: '. ', cls: 'cc' }, { t: 'Commits:', cls: 'key' }, { t: r.commitsDots, cls: 'cc' },
+        { n: r.commits }, { t: ' | ', cls: 'cc' }, { t: 'Followers: ', cls: 'key' },
+        { t: r.followersDots, cls: 'cc' }, { n: r.followers },
+      ], 0.35)}\n`;
+      continue;
     } else if (r.type === 'stats_loc') {
-      rightSvg = `<tspan class="cc">. </tspan><tspan class="key">Lines of Code:</tspan><tspan class="cc">${r.locMidDots}</tspan><tspan class="value">${r.loc}</tspan><tspan class="cc"> ( </tspan><tspan class="addColor">${r.added}++</tspan><tspan class="cc">, </tspan><tspan class="delColor">${r.deleted}-- </tspan><tspan class="cc">${r.endDots} )</tspan>`;
+      rowsSvg += `  ${tender(y, [
+        { t: '. ', cls: 'cc' }, { t: 'Lines of Code:', cls: 'key' }, { t: r.locMidDots, cls: 'cc' },
+        { n: r.loc }, { t: ' ( ', cls: 'cc' }, { n: r.added }, { t: '++', cls: 'addColor' }, { t: ', ', cls: 'cc' },
+        { n: r.deleted }, { t: '--', cls: 'delColor' }, { t: ' ', cls: 'cc' }, { t: r.endDots, cls: 'cc' }, { t: ' )', cls: 'cc' },
+      ], 0.5)}\n`;
+      continue;
     }
 
     rowsSvg += `  <text x="420" y="${y}" xml:space="preserve">${rightSvg}</text>\n`;
