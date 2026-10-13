@@ -12,11 +12,6 @@ export default {
   name: 'shivam',
   host: 'gaur',
 
-  // ─── Profile Avatar ──────────────────────────────────────────
-  avatarImage: 'avatar.png',
-  asciiWidth: 38,
-  asciiHeight: 25,
-
   // ─── GitHub Join Date (Nov 30, 2023) ─────────────────────────
   uptimeStartDate: '2023-11-30',
 

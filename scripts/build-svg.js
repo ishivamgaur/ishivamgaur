@@ -1,13 +1,12 @@
 // ╔══════════════════════════════════════════════════════════════╗
-// ║        🚀 DYNAMIC SVG BUILDER (Edge-to-Edge Pixel Grid)    ║
+// ║        🚀 DYNAMIC SVG BUILDER (Activity Graphs)              ║
 // ║                                                            ║
-// ║  • Left: Edge-to-edge pixel grid (zero padding, full height)║
-// ║    with subtle matrix grid lines and chunky avatar tiles   ║
+// ║  • Left: animated activity line graph, totals strip,       ║
+// ║    full-width heatmap with months + year in review         ║
 // ║  • Right: Tailored Neofetch terminal card with live stats  ║
 // ║  • Responsive, zero horizontal scroll, dark/light themes    ║
 // ╚══════════════════════════════════════════════════════════════╝
 
-import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -52,127 +51,214 @@ function calculateUptime(startDateStr) {
   return `${yStr}, ${mStr}, ${dStr}${isBirthday ? ' 🎂' : ''}`;
 }
 
-// ─── GENERATE MATRIX ASCII ART PORTRAIT ───────────────────────
-async function generateAsciiArt(imagePath) {
-  const trimmed = await sharp(imagePath).trim().toBuffer();
-  const meta = await sharp(trimmed).metadata();
+// ─── LEFT LIVE-STAT WIDGETS ─────────────────────────────────────
+// Widget-style cards (repos / stars / commits / followers / streak /
+// top languages) filling the left pane. All values come from the live
+// GitHub API via fetchStats().
+const CARD_H = 530;
+const LEFT_PAD = 25;
+const LEFT_INNER_W = 350; // 25 → 375, mirrors the 25px right margin
 
-  const imgAspect = meta.width / meta.height; // ~0.9266
-  const targetWidth = 360;
-  const fontSize = 7;
-  const charW = 4.2; // 0.6 * fontSize
-  const charH = 8.5; // vertical line step
+function streakFromDays(days) {
+  let cur = 0, best = 0;
+  let i = days.length - 1;
+  if (i >= 0 && days[i].count === 0) i -= 1; // a zero today doesn't break the streak
+  for (; i >= 0 && days[i].count > 0; i--) cur += 1;
+  let run = 0;
+  for (const d of days) {
+    run = d.count > 0 ? run + 1 : 0;
+    best = Math.max(best, run);
+  }
+  return { streak: cur, longestStreak: best };
+}
 
-  const cols = Math.round(targetWidth / charW); // 86
-  const targetHeight = targetWidth / imgAspect; // 388.5
-  const rows = Math.round(targetHeight / charH); // 46
+function fmtDay(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
 
-  const { data } = await sharp(trimmed)
-    .resize(cols, rows, { fit: 'fill' })
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
+function smoothPath(pts) {
+  if (pts.length < 2) return '';
+  let d = `M ${pts[0].x},${pts[0].y}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i];
+    const p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+    const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2.x},${p2.y}`;
+  }
+  return d;
+}
 
-  const codeGlyphs = '01{}[]();:=+*#@%?!/~$_|abcdefghijklmnopqrstuvwxyz';
-  const densityRamp = ' .:-=+*#%@';
+let odoId = 0;
 
-  function buildAsciiSvg(isDark) {
-    const startX = 25;
-    const startY = 530 - (rows * charH);
-
-    let rowsSvg = '';
-    for (let r = 0; r < rows; r++) {
-      const y = (startY + r * charH).toFixed(1);
-      let line = [];
-      for (let c = 0; c < cols; c++) {
-        const idx = (r * cols + c) * 4;
-        const red = data[idx];
-        const green = data[idx + 1];
-        const blue = data[idx + 2];
-        const alpha = data[idx + 3];
-
-        if (alpha < 35) {
-          line.push({ char: ' ', color: 'transparent' });
-          continue;
-        }
-
-        const lum = 0.299 * red + 0.587 * green + 0.114 * blue;
-        let char = ' ';
-        let hexColor = '';
-
-        if (isDark) {
-          // Dark theme (#0d1017)
-          if (lum < 45) {
-            const glyphIdx = (r * 7 + c * 13) % codeGlyphs.length;
-            char = codeGlyphs[glyphIdx];
-            hexColor = '#3d444d'; // subtle slate gray
-          } else if (lum < 110) {
-            const glyphIdx = (r * 5 + c * 11) % codeGlyphs.length;
-            char = codeGlyphs[glyphIdx];
-            hexColor = '#656d76';
-          } else if (lum < 180) {
-            const glyphIdx = Math.floor((lum / 255) * densityRamp.length);
-            char = densityRamp[Math.min(densityRamp.length - 1, glyphIdx)];
-            hexColor = '#a5d6ff'; // light blue accent
-          } else {
-            char = '@';
-            hexColor = '#ffffff';
-          }
-        } else {
-          // Light theme (#ffffff)
-          if (lum < 45) {
-            const glyphIdx = (r * 7 + c * 13) % codeGlyphs.length;
-            char = codeGlyphs[glyphIdx];
-            hexColor = '#24292f'; // dark charcoal
-          } else if (lum < 110) {
-            const glyphIdx = (r * 5 + c * 11) % codeGlyphs.length;
-            char = codeGlyphs[glyphIdx];
-            hexColor = '#57606a';
-          } else if (lum < 180) {
-            const glyphIdx = Math.floor((lum / 255) * densityRamp.length);
-            char = densityRamp[Math.min(densityRamp.length - 1, glyphIdx)];
-            hexColor = '#0969da'; // GitHub blue accent
-          } else {
-            char = '@';
-            hexColor = '#0969da';
-          }
-        }
-
-        line.push({ char, color: hexColor });
+// Rolling digit column (odometer) for count-up animations.
+// Pure SMIL — no JavaScript — so it animates inside GitHub READMEs.
+// Renders one number string left-to-right from (x, baseline y); each digit
+// rolls from 0 to its final value with an ease-out spline. Returns {svg, width}.
+function odometer(x, y, str, { fill, fs = 16, weight = 700, dur = 1.4, delay = 0 } = {}) {
+  const MONO = `font-family="Consolas, 'Courier New', monospace"`;
+  const A = 0.6 * fs; // monospace advance per char
+  const LH = fs; // digit pitch
+  const cw = 0.62 * fs; // clip width
+  let cx = x, out = '', di = 0;
+  for (const ch of String(str)) {
+    if (ch >= '0' && ch <= '9') {
+      const d = +ch;
+      const ccx = cx + A / 2;
+      const id = `odo${odoId++}`;
+      const begin = (delay + di * 0.09).toFixed(2);
+      out += `<g><clipPath id="${id}"><rect x="${(ccx - cw / 2).toFixed(1)}" y="${(y - fs * 0.85).toFixed(1)}" width="${cw.toFixed(1)}" height="${(fs * 0.85 + 1).toFixed(1)}"/></clipPath><g clip-path="url(#${id})"><g><animateTransform attributeName="transform" type="translate" from="0 0" to="0 ${-d * LH}" dur="${dur}s" begin="${begin}s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.25 0.8 0.3 1"/>`;
+      for (let k = 0; k <= 9; k++) {
+        out += `<text x="${ccx.toFixed(1)}" y="${y + k * LH}" font-size="${fs}" font-weight="${weight}" text-anchor="middle" fill="${fill}" ${MONO}>${k}</text>`;
       }
-
-      let tspans = '';
-      let curColor = null;
-      let curText = '';
-
-      line.forEach(cell => {
-        if (cell.color === curColor) {
-          curText += cell.char;
-        } else {
-          if (curText) {
-            if (curColor === 'transparent') {
-              tspans += `<tspan>${curText}</tspan>`;
-            } else {
-              tspans += `<tspan fill="${curColor}">${curText}</tspan>`;
-            }
-          }
-          curColor = cell.color;
-          curText = cell.char;
-        }
-      });
-      if (curText) {
-        if (curColor === 'transparent') {
-          tspans += `<tspan>${curText}</tspan>`;
-        } else {
-          tspans += `<tspan fill="${curColor}">${curText}</tspan>`;
-        }
-      }
-      rowsSvg += `    <text x="${startX}" y="${y}">${tspans}</text>\n`;
+      out += `</g></g></g>`;
+      di++;
+    } else {
+      out += `<text x="${cx.toFixed(1)}" y="${y}" font-size="${fs}" font-weight="${weight}" fill="${fill}" ${MONO}>${ch}</text>`;
     }
-    return rowsSvg;
+    cx += A;
+  }
+  return { svg: out, width: cx - x };
+}
+
+function buildLeftWidgets(stats, w) {
+  const MONO = `font-family="Consolas, 'Courier New', monospace"`;
+  const X0 = LEFT_PAD;
+
+  // ── Weekly activity from the daily calendar (last 26 weeks) ──
+  const WEEKS = 26;
+  const TOTAL = WEEKS * 7;
+  const rawDays = (stats.calendar || []).slice(-TOTAL);
+  // Align columns to Sun–Sat like GitHub: pad the front by the first day's weekday.
+  const firstDow = rawDays.length ? new Date(`${rawDays[0].date}T00:00:00Z`).getUTCDay() : NaN;
+  const leadOff = Number.isFinite(firstDow) ? firstDow : 0;
+  const days = [...Array(leadOff).fill(null), ...rawDays].slice(-TOTAL);
+  while (days.length < TOTAL) days.unshift(null);
+  const weekly = [];
+  for (let k = 0; k < WEEKS; k++) {
+    let s = 0;
+    for (let d = 0; d < 7; d++) {
+      const day = days[k * 7 + d];
+      if (day) s += day.count;
+    }
+    weekly.push(s);
+  }
+  const peak = Math.max(1, ...weekly);
+
+  // ── Animated line graph (draw-on + fading area + pulsing tip) ──
+  // Full inner width (25 → 375), 12px title→chart pad like other sections.
+  const GX = X0, GW = LEFT_INNER_W, GB = 250, GH = 170, GT = GB - GH;
+  const pts = weekly.map((v, i) => ({
+    x: +(GX + (i * GW) / (WEEKS - 1)).toFixed(1),
+    y: +(GB - (v / peak) * GH).toFixed(1),
+  }));
+  const line = smoothPath(pts);
+  const area = `${line} L ${pts[pts.length - 1].x},${GB} L ${pts[0].x},${GB} Z`;
+  const tip = pts[pts.length - 1];
+  const lineColor = w.graph[4];
+
+  let svg = '';
+  svg += `<text x="${X0}" y="68" font-size="14" font-weight="700" fill="${w.title}" ${MONO}>Activity · 6 mo</text>`;
+  // Header numbers roll up like an odometer; words stay static.
+  {
+    const A12 = 0.6 * 12;
+    const tStr = stats.commits.toLocaleString(), pStr = `${peak}`;
+    const s1 = ' total · peak ', s2 = '/wk';
+    const totalW = (tStr.length + s1.length + pStr.length + s2.length) * A12;
+    let hx = X0 + LEFT_INNER_W - totalW;
+    const o1 = odometer(hx, 68, tStr, { fill: w.value, fs: 12, delay: 0.1 });
+    svg += o1.svg;
+    hx += o1.width;
+    svg += `<text x="${hx.toFixed(1)}" y="68" font-size="12" fill="${w.label}" ${MONO}>${s1}</text>`;
+    hx += s1.length * A12;
+    const o2 = odometer(hx, 68, pStr, { fill: w.value, fs: 12, delay: 0.3 });
+    svg += o2.svg;
+    hx += o2.width;
+    svg += `<text x="${hx.toFixed(1)}" y="68" font-size="12" fill="${w.label}" ${MONO}>${s2}</text>`;
+  }
+  svg += `<linearGradient id="areaFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lineColor}" stop-opacity="0.35"/><stop offset="1" stop-color="${lineColor}" stop-opacity="0"/></linearGradient>`;
+  for (const f of [0, 0.5, 1]) {
+    const gy = (GB - f * GH).toFixed(1);
+    svg += `<line x1="${GX}" y1="${gy}" x2="${GX + GW}" y2="${gy}" stroke="${w.tileBorder}" stroke-width="1" opacity="0.7"/>`;
+  }
+  svg += `<path d="${area}" fill="url(#areaFade)" opacity="0"><animate attributeName="opacity" from="0" to="1" dur="1s" begin="0.9s" fill="freeze"/></path>`;
+  svg += `<path d="${line}" fill="none" stroke="${lineColor}" stroke-width="2.5" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"><animate attributeName="stroke-dashoffset" from="100" to="0" dur="1.6s" fill="freeze"/></path>`;
+  svg += `<circle cx="${tip.x}" cy="${tip.y}" r="4" fill="${lineColor}" stroke="${w.tileBg}" stroke-width="2"><animate attributeName="r" values="3.5;5.5;3.5" dur="2s" repeatCount="indefinite"/></circle>`;
+
+  // ── Totals strip: 4 mini stats, numbers roll up, same blue as top ──
+  const groups = [
+    [stats.repos.toLocaleString(), 'repos'],
+    [stats.stars.toLocaleString(), 'stars'],
+    [stats.forks.toLocaleString(), 'forks'],
+    [stats.followers.toLocaleString(), 'followers'],
+  ];
+  groups.forEach(([val, label], gi) => {
+    const cx = X0 + (LEFT_INNER_W * (gi + 0.5)) / 4;
+    const o = odometer(cx - (val.length * 0.6 * 16) / 2, 276, val, { fill: w.value, fs: 16, delay: 0.2 + gi * 0.15 });
+    svg += o.svg;
+    svg += `<text x="${cx.toFixed(1)}" y="294" font-size="10" text-anchor="middle" fill="${w.label}" ${MONO} opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.8s" begin="0.5s" fill="freeze"/>${label}</text>`;
+  });
+
+  // ── Contribution heatmap: full width + month labels, GitHub-style ──
+  // Bigger 12px cells; week columns cascade in with staggered SMIL fade-ins.
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const HWEEKS = 27, CELL = 10, HGAP = 3, HSTEP = CELL + HGAP;
+  const HTOTAL = HWEEKS * 7;
+  const hraw = (stats.calendar || []).slice(-HTOTAL);
+  const hDowRaw = hraw.length ? new Date(`${hraw[0].date}T00:00:00Z`).getUTCDay() : NaN;
+  const hOff = Number.isFinite(hDowRaw) ? hDowRaw : 0;
+  const hdays = [...Array(hOff).fill(null), ...hraw].slice(-HTOTAL);
+  while (hdays.length < HTOTAL) hdays.unshift(null);
+  const max = stats.calMax || 1;
+  const compLevel = (c) => (c <= 0 ? 0 : c / max <= 0.25 ? 1 : c / max <= 0.5 ? 2 : c / max <= 0.75 ? 3 : 4);
+  const levelOf = (hday, c) => (hday && hday.level != null
+    ? Math.min(4, Math.max(0, hday.level))
+    : compLevel(c));
+  const GY = 372;
+  svg += `<text x="${X0}" y="334" font-size="14" font-weight="700" fill="${w.title}" ${MONO}>Daily contributions</text>`;
+  if (stats.streak != null) {
+    svg += `<text x="${X0 + LEFT_INNER_W}" y="334" font-size="12" text-anchor="end" fill="${w.key}" ${MONO}>${stats.streak}-day streak · best ${stats.longestStreak}</text>`;
+  }
+  // Month label above each month's first column (GitHub-style).
+  let prevYM = -1;
+  for (let wk = 0; wk < HWEEKS; wk++) {
+    let ym = -1, m = -1;
+    for (let d = 0; d < 7; d++) {
+      const hd = hdays[wk * 7 + d];
+      if (!hd) continue;
+      const dt = new Date(`${hd.date}T00:00:00Z`);
+      const yy = dt.getUTCFullYear(), mm = dt.getUTCMonth();
+      if (!Number.isFinite(yy) || mm < 0 || mm > 11) continue;
+      ym = yy * 12 + mm;
+      m = mm;
+      break;
+    }
+    if (ym >= 0 && ym !== prevYM) {
+      svg += `<text x="${X0 + wk * HSTEP}" y="${GY - 10}" font-size="10" fill="${w.label}" ${MONO}>${MONTHS[m]}</text>`;
+      prevYM = ym;
+    }
+  }
+  for (let wk = 0; wk < HWEEKS; wk++) {
+    svg += `<g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.45s" begin="${(0.9 + wk * 0.05).toFixed(2)}s" fill="freeze"/>`;
+    for (let d = 0; d < 7; d++) {
+      const hday = hdays[wk * 7 + d];
+      const c = hday ? hday.count : 0;
+      const tipTxt = hday ? `${c} contribution${c === 1 ? '' : 's'} on ${fmtDay(hday.date)}` : 'no data';
+      svg += `<rect x="${X0 + wk * HSTEP}" y="${GY + d * HSTEP}" width="${CELL}" height="${CELL}" rx="2" fill="${w.graph[levelOf(hday, c)]}"><title>${escapeXml(tipTxt)}</title></rect>`;
+    }
+    svg += `</g>`;
   }
 
-  return { buildAsciiSvg, fontSize };
+  // Less → More key, right-aligned like GitHub.
+  const keyY = 480;
+  svg += `<text x="273" y="${keyY}" font-size="10" text-anchor="end" fill="${w.label}" ${MONO}>Less</text>`;
+  w.graph.forEach((g, i) => {
+    svg += `<rect x="${281 + i * (CELL + 3)}" y="${keyY - 9}" width="10" height="10" rx="2" fill="${g}"/>`;
+  });
+  svg += `<text x="${X0 + LEFT_INNER_W}" y="${keyY}" font-size="10" text-anchor="end" fill="${w.label}" ${MONO}>More</text>`;
+
+  return `<g clip-path="url(#cardClip)">${svg}\n</g>`;
 }
 
 // ─── FETCH LIVE GITHUB STATS ──────────────────────────────────
@@ -189,7 +275,13 @@ async function fetchStats(username) {
   let stars = 38;
   let contributed = 12;
   let commits = 1450;
+  let forks = 0;
   let createdAt = '2023-11-30T19:20:31Z';
+  let repoList = [];
+  let streak = null;
+  let longestStreak = 0;
+  let calendar = [];
+  let calMax = 1;
 
   try {
     const userRes = await fetch(`https://api.github.com/users/${username}`, { headers });
@@ -202,10 +294,46 @@ async function fetchStats(username) {
 
     const reposRes = await fetch(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`, { headers });
     if (reposRes.ok) {
-      const repoList = await reposRes.json();
+      repoList = await reposRes.json();
       stars = repoList.reduce((acc, r) => acc + (r.stargazers_count || 0), 0);
+      forks = repoList.reduce((acc, r) => acc + (r.forks_count || 0), 0);
     }
 
+    // Token-free daily contributions from the public calendar page.
+    // This is what fills the heatmap + line graph without GITHUB_TOKEN.
+    if (!calendar.length) {
+      try {
+        const cRes = await fetch(`https://github.com/users/${username}/contributions`, {
+          headers: { 'User-Agent': 'github-profile-neofetch' },
+        });
+        if (cRes.ok) {
+          const body = await cRes.text();
+          const cells = [];
+          for (const m of body.matchAll(/<td[^>]*data-date="([^"]+)"[^>]*>/g)) {
+            const tag = m[0];
+            if (!tag.includes('ContributionCalendar-day')) continue;
+            const lv = /data-level="(\d)"/.exec(tag);
+            cells.push({ date: m[1], level: lv ? parseInt(lv[1], 10) : 0, count: 0 });
+          }
+          // Counts live in the adjacent <tool-tip> elements, in the same order.
+          const tips = [...body.matchAll(/>(No|\d[\d,]*) contributions? on/g)].map((m) => m[1]);
+          if (tips.length === cells.length) {
+            cells.forEach((c, i) => {
+              c.count = tips[i] === 'No' ? 0 : parseInt(tips[i].replace(/,/g, ''), 10) || 0;
+            });
+          }
+          if (cells.length) {
+            // Cells arrive row-major (all Sundays, then Mondays…): sort chronologically.
+            cells.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+            calendar = cells;
+            calMax = Math.max(1, ...cells.map((p) => p.count));
+            ({ streak, longestStreak } = streakFromDays(cells));
+          }
+        }
+      } catch (err) {
+        console.warn('Contributions calendar warning:', err.message);
+      }
+    }
     if (token) {
       try {
         const query = `
@@ -217,6 +345,12 @@ async function fetchStats(username) {
               contributionsCollection {
                 contributionCalendar {
                   totalContributions
+                  weeks {
+                    contributionDays {
+                      date
+                      contributionCount
+                    }
+                  }
                 }
               }
             }
@@ -238,6 +372,16 @@ async function fetchStats(username) {
           if (userGql) {
             contributed = userGql.repositoriesContributedTo?.totalCount || contributed;
             commits = userGql.contributionsCollection?.contributionCalendar?.totalContributions || commits;
+            // Daily calendar from GraphQL (needs token).
+            const weeks = userGql.contributionsCollection?.contributionCalendar?.weeks || [];
+            const days = weeks
+              .flatMap((wk) => wk.contributionDays || [])
+              .map((d) => ({ date: d.date, count: d.contributionCount }));
+            if (days.length) {
+              calendar = days;
+              calMax = Math.max(1, ...days.map((d) => d.count));
+              ({ streak, longestStreak } = streakFromDays(days));
+            }
           }
         }
       } catch (err) {
@@ -248,11 +392,14 @@ async function fetchStats(username) {
     console.error('Stats fetch error:', err.message);
   }
 
+  // Token-free totals: trailing-year sum matches the calendar window.
+  if (calendar.length) commits = calendar.reduce((a, d) => a + d.count, 0);
+
   const additions = Math.round(commits * 85 + repos * 250);
   const deletions = Math.round(commits * 22 + repos * 80);
   const netLoc = additions - deletions;
 
-  return { repos, stars, followers, contributed, commits, additions, deletions, netLoc, createdAt };
+  return { repos, stars, forks, followers, contributed, commits, additions, deletions, netLoc, createdAt, streak, longestStreak, calendar, calMax };
 }
 
 // ─── FORMAT RIGHT COLUMN WITH DOT LEADERS ─────────────────────
@@ -400,7 +547,7 @@ function buildRightLines(stats, uptime) {
 }
 
 // ─── RENDER RESPONSIVE SVG (DARK & LIGHT) ─────────────────────
-function renderSvg(theme, asciiData, rightLines) {
+function renderSvg(theme, stats, rightLines) {
   const isDark = theme === 'dark';
 
   const colors = isDark
@@ -425,7 +572,11 @@ function renderSvg(theme, asciiData, rightLines) {
         title: '#24292f',
       };
 
-  const leftAsciiSvg = asciiData.buildAsciiSvg(isDark);
+  const widget = isDark
+    ? { tileBg: '#161b22', tileBorder: '#30363d', num: '#f0f6fc', label: '#8b949e', track: '#21262d', key: '#ffa657', value: '#a5d6ff', title: '#c9d1d9', graph: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'] }
+    : { tileBg: '#f6f8fa', tileBorder: '#d0d7de', num: '#24292f', label: '#57606a', track: '#eaeef2', key: '#bc4c00', value: '#0969da', title: '#24292f', graph: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'] };
+
+  const leftWidgetsSvg = buildLeftWidgets(stats, widget);
 
   // Generate right column lines
   let rowsSvg = '';
@@ -475,10 +626,8 @@ text, tspan { white-space: pre; }
 <!-- Card Base -->
 <rect width="${CARD_WIDTH}px" height="530px" fill="${colors.cardBg}" rx="15" ${colors.border}/>
 
-<!-- Left Matrix ASCII Art Portrait -->
-<g clip-path="url(#cardClip)" font-size="${asciiData.fontSize}px">
-${leftAsciiSvg}
-</g>
+<!-- Left Live-Stat Widgets -->
+${leftWidgetsSvg}
 
 <!-- Right Neofetch Content -->
 <g clip-path="url(#cardClip)" font-size="16px">
@@ -490,11 +639,7 @@ ${rowsSvg}
 
 // ─── MAIN EXECUTION ───────────────────────────────────────────
 export async function build() {
-  console.log('🚀 Building Neofetch Terminal SVGs with Matrix ASCII Art Portrait...\n');
-
-  const avatarPath = path.join(ROOT, config.avatarImage);
-  console.log('🎨 Generating matrix ASCII art portrait (preserving natural aspect ratio)...');
-  const asciiData = await generateAsciiArt(avatarPath);
+  console.log('🚀 Building Neofetch Terminal SVGs with activity graphs...\n');
 
   console.log(`📊 Fetching stats for @${config.username}...`);
   const stats = await fetchStats(config.username);
@@ -505,8 +650,8 @@ export async function build() {
   const rightLines = buildRightLines(stats, uptime);
 
   console.log('🖼️  Writing responsive dark_mode.svg and light_mode.svg...');
-  const darkSvg = renderSvg('dark', asciiData, rightLines);
-  const lightSvg = renderSvg('light', asciiData, rightLines);
+  const darkSvg = renderSvg('dark', stats, rightLines);
+  const lightSvg = renderSvg('light', stats, rightLines);
 
   fs.writeFileSync(path.join(ROOT, 'dark_mode.svg'), darkSvg, 'utf8');
   fs.writeFileSync(path.join(ROOT, 'light_mode.svg'), lightSvg, 'utf8');
@@ -524,7 +669,7 @@ export async function build() {
 
   fs.writeFileSync(path.join(ROOT, 'README.md'), readmeContent, 'utf8');
 
-  console.log('✅ Successfully built Matrix ASCII Art SVGs and README.md!');
+  console.log('✅ Successfully built chart SVGs and README.md!');
 }
 
 build().catch((err) => {
